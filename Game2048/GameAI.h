@@ -3,18 +3,18 @@
 #define AI_H
 #include <list>
 #include <utility>
-#include "GameRule.h"
+#include "GameBoard.h"
 using namespace std;
 
 class GameAI {
 public:
-	GameAI(GameRule *rule);
+	GameAI(GameBoard *rule);
 	static int count;
 	pair<int, double> GetBest(int depth, double alpha, double beta);
 	~GameAI();
 
 private:
-	GameRule * rule;
+	GameBoard * rule;
 	double Evaluate();
 	static const double smoothWeight;
 	static const double monoWeight;

@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include <list>
 #include <utility>
-#include "GameRule.h"
+#include "GameBoard.h"
+
 using namespace std;
 
 // 构造、析构、重载
-GameRule::GameRule() {
+GameBoard::GameBoard() {
 	this->score = 0;
 	this->isGameRunning = false;
 	this->isPlayerTurn = false;
@@ -15,7 +16,7 @@ GameRule::GameRule() {
 	pos_start.SetPoint(55, 55);
 	this->LoadBitMap();
 }
-GameRule::GameRule(GameRule &rule)
+GameBoard::GameBoard(GameBoard &rule)
 {
 	this->score = rule.score;
 	this->isGameRunning = rule.isGameRunning;
@@ -32,7 +33,7 @@ GameRule::GameRule(GameRule &rule)
 			this->board->set(i, j, temp.get(i, j));
 	//this->board->Copy(temp);
 }
-GameRule::~GameRule() {
+GameBoard::~GameBoard() {
 	if (this->board != NULL)
 		delete this->board;
 	//delete this->last_board;
@@ -54,7 +55,7 @@ GameRule::~GameRule() {
 //}
 
 // 开始、重启、结束游戏
-void GameRule::GameStart()
+void GameBoard::GameStart()
 {
 	if (!isGameRunning)
 	{
@@ -69,11 +70,11 @@ void GameRule::GameStart()
 		isPlayerTurn = true;
 	}
 }
-void GameRule::GameRestart() {
+void GameBoard::GameRestart() {
 	if (isGameRunning) this->GameOver();
 	this->GameStart();
 }
-void GameRule::GameOver()
+void GameBoard::GameOver()
 {
 	this->score = 0;
 	isGameRunning = false;
@@ -81,11 +82,11 @@ void GameRule::GameOver()
 }
 
 // 绘图函数
-void GameRule::LoadBitMap() {
+void GameBoard::LoadBitMap() {
 	for (int i = 0; i < 12; ++i)
 		bitMap[i].LoadBitmapW(i + 1000);
 }
-void GameRule::DrawScore(CDC &dc) {
+void GameBoard::DrawScore(CDC &dc) {
 	CFont f1;
 	f1.CreateFontIndirectW(FontFactory::CreateFontW(32, L"微软雅黑"));
 	dc.SelectObject(&f1);
@@ -94,7 +95,7 @@ void GameRule::DrawScore(CDC &dc) {
 	dc.SetTextColor(RGB(205, 193, 180));
 	dc.TextOutW(pos_start.x, 0, str);
 }
-void GameRule::Draw(CDC &dc) {
+void GameBoard::Draw(CDC &dc) {
 	CDC MemDC;
 	HDC hdc = dc.GetSafeHdc();
 	CDC *pDC = new CDC;
@@ -123,7 +124,7 @@ void GameRule::Draw(CDC &dc) {
 
 
 // 辅助函数
-bool GameRule::MoveTo(int d) {
+bool GameBoard::MoveTo(int d) {
 	if (isPlayerTurn)
 	{
 		switch (d) {
@@ -149,22 +150,22 @@ bool GameRule::MoveTo(int d) {
 	return false;
 	
 }
-void GameRule::fillBoardWith(int element)
+void GameBoard::fillBoardWith(int element)
 {
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
 			this->board->set(i, j, element);
 }
-inline double GameRule::Rand(double L, double R) { return L + (R - L) * rand() * 1.0 / RAND_MAX; }
-inline int GameRule::log2(int n) { return log10(n*1.0) / log10(2.0); }
-void GameRule::SwitchPlayer()
+inline double GameBoard::Rand(double L, double R) { return L + (R - L) * rand() * 1.0 / RAND_MAX; }
+inline int GameBoard::log2(int n) { return log10(n*1.0) / log10(2.0); }
+void GameBoard::SwitchPlayer()
 {
 	if (this->isPlayerTurn)
 		this->isPlayerTurn = false;
 	else
 		this->isPlayerTurn = true;
 }
-bool GameRule::isWin() {
+bool GameBoard::isWin() {
 	int max = 0;
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -175,7 +176,7 @@ bool GameRule::isWin() {
 	}
 	return (max == 2048);
 }
-bool GameRule::isDead() {
+bool GameBoard::isDead() {
 	if (this->GetEmptyNumber() > 0) 
 		return false;
 	for (int i = 0; i < 4; ++i)
@@ -197,7 +198,7 @@ bool GameRule::isDead() {
 
 // 评估函数
 // 评估插入2或4
-int GameRule::EvaluateInsert(int position, int value)
+int GameBoard::EvaluateInsert(int position, int value)
 {
 	int x = position/10;
 	int y = position%10;
@@ -242,7 +243,7 @@ int GameRule::EvaluateInsert(int position, int value)
 	return (temp == 9999 ? 0 : temp);
 }
 // 插入值
-void GameRule::InsertTile(int position, int value)
+void GameBoard::InsertTile(int position, int value)
 {
 	int i = position / 10;
 	int j = position % 10;
@@ -253,7 +254,7 @@ void GameRule::InsertTile(int position, int value)
 		exit(1);
 }
 // 评估平滑性
-int GameRule::Smoothness() {
+int GameBoard::Smoothness() {
 	int smoothness = 0;
 	int value = 0;
 	int targetValue = 0;
@@ -282,7 +283,7 @@ int GameRule::Smoothness() {
 	return smoothness;
 }
 // 评估单调性
-int GameRule::Monotonicity() {
+int GameBoard::Monotonicity() {
 	int monotonicity = 0;
 	int mono1 = 0;
 	int mono2 = 0;
@@ -346,7 +347,7 @@ int GameRule::Monotonicity() {
 
 
 // 获取所有空格的链表
-list<int>& GameRule::getEmptyGrids()
+list<int>& GameBoard::getEmptyGrids()
 {
 	this->empty_grids.clear();
 	for(int i=0;i<4;i++)
@@ -356,7 +357,7 @@ list<int>& GameRule::getEmptyGrids()
 	return this->empty_grids;
 }
 // 获取Board
-SimpleMatrix& GameRule::GetBoard() {
+SimpleMatrix& GameBoard::GetBoard() {
 	return *this->board;
 }
 // 获取上一步的Board
@@ -364,7 +365,7 @@ SimpleMatrix& GameRule::GetBoard() {
 //	return *this->last_board;
 //}
 // 随机生成新的方块，2或4
-void GameRule::generateNewBlock()
+void GameBoard::generateNewBlock()
 {
 	if (!isPlayerTurn)
 	{
@@ -377,7 +378,7 @@ void GameRule::generateNewBlock()
 	}
 }
 // 按需求生成新的方块
-void GameRule::generateNewBlock(int element) {
+void GameBoard::generateNewBlock(int element) {
 	int new_pos = this->getRandomBlankPos();
 	if (new_pos == -1) return;
 	int row = new_pos / 10;
@@ -386,13 +387,13 @@ void GameRule::generateNewBlock(int element) {
 }
 
 // 获取最大值
-int GameRule::MaxValue() {
+int GameBoard::MaxValue() {
 	return this->board->getMaxValue();
 }
 
 // private
 // 随机生成即将要填充的空位
-int GameRule::getRandomBlankPos() {
+int GameBoard::getRandomBlankPos() {
 	vector<int> blankBlock;
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -403,7 +404,7 @@ int GameRule::getRandomBlankPos() {
 	return blankBlock[randomIdx];//随机新位置
 }
 // 元素移动&融合
-void GameRule::Action2048(int direction)
+void GameBoard::Action2048(int direction)
 {
 	switch (direction) {
 		// 上
@@ -451,7 +452,7 @@ void GameRule::Action2048(int direction)
 	}
 }
 // 获取当前空位数目
-int GameRule::GetEmptyNumber()
+int GameBoard::GetEmptyNumber()
 {
 	return this->board->getElementCount(0);
 }

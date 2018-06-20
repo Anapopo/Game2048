@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#ifndef RULE_H
-#define RULE_H
+#ifndef BOARD_H
+#define BOARD_H
 #include <vector>
 #include <list>
 #include "FontFactory.h"
 #include "SimpleMatrix.cpp"
 using namespace std;
 
-class GameRule {
+class GameBoard {
 public:
 	int score;
 	bool isGameRunning;
@@ -23,10 +23,10 @@ private:
 	CBitmap bitMap[12];
 
 public:
-	GameRule();
+	GameBoard();
 	// 复制构造
-	GameRule(GameRule &rule);
-	~GameRule();
+	GameBoard(GameBoard &rule);
+	~GameBoard();
 	//GameRule& operator=(GameRule& rule);
 	// 开始游戏
 	void GameStart();

@@ -8,7 +8,7 @@
 #endif
 
 #include "resource.h"       // Ö÷·ûºÅ
-#include "GameRule.h"
+#include "GameBoard.h"
 #include "GameAI.h"
 
 // CGame2048App:

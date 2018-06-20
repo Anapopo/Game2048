@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameAI.h"
+#include "GameBoard.h"
 using namespace std;
 
 // 各个评估标准所占权重
@@ -11,7 +12,7 @@ const double GameAI::maxWeight = 1.0;
 int GameAI::count = 40;
 
 // 构造
-GameAI::GameAI(GameRule *theRule)
+GameAI::GameAI(GameBoard *theRule)
 {
 	this->rule = theRule;
 }
@@ -36,9 +37,9 @@ pair<int, double> GameAI::GetBest(int depth, double alpha, double beta)
 	// 随机上右 20 次操作
 	if (count > 0) {
 		if (count % 2) {
-			return make_pair(GameRule::UP, 999);
+			return make_pair(GameBoard::UP, 999);
 		}
-		return make_pair(GameRule::RIGHT, 999);
+		return make_pair(GameBoard::RIGHT, 999);
 	}
 	int move = 0;
 	double score = 0;
@@ -48,7 +49,7 @@ pair<int, double> GameAI::GetBest(int depth, double alpha, double beta)
 		score = alpha;// 初始评估值无穷小
 		for (int dir = 1; dir <= 4; ++dir) // 遍历四个方向
 		{
-			GameRule temp(*rule);
+			GameBoard temp(*rule);
 			if (temp.MoveTo(dir)) { // 模拟下一步操作
 				temp.SwitchPlayer();
 				// 获胜为最高权重
@@ -107,7 +108,7 @@ pair<int, double> GameAI::GetBest(int depth, double alpha, double beta)
 		//for every left branch
 		std::list< std::pair<int, int> >::iterator positionItor = position.begin();
 		for (; positionItor != position.end(); positionItor++) {
-			GameRule temp2(*rule);
+			GameBoard temp2(*rule);
 
 			temp2.InsertTile(positionItor->first, positionItor->second);// 插入最坏选择
 			temp2.SwitchPlayer();
