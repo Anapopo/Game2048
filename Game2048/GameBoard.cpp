@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <list>
 #include <utility>
+#include <time.h>
 #include "GameBoard.h"
 
 using namespace std;
@@ -10,10 +11,10 @@ GameBoard::GameBoard() {
 	this->score = 0;
 	this->isGameRunning = false;
 	this->isPlayerTurn = false;
-	this->offset_width = 10;
+	//this->offset_width = 20;
 	board = new SimpleMatrix(4, 0);
 	//last_board = new SimpleMatrix(4, 0);
-	pos_start.SetPoint(55, 55);
+	//pos_start.SetPoint(55, 55);
 	this->LoadBitMap();
 }
 GameBoard::GameBoard(GameBoard &rule)
@@ -21,8 +22,8 @@ GameBoard::GameBoard(GameBoard &rule)
 	this->score = rule.score;
 	this->isGameRunning = rule.isGameRunning;
 	this->isPlayerTurn = rule.isPlayerTurn;
-	this->offset_width = 10;
-	pos_start.SetPoint(55, 55);
+	//this->offset_width = 10;
+	//pos_start.SetPoint(55, 55);
 	this->LoadBitMap();
 
 	SimpleMatrix temp(rule.GetBoard());
@@ -93,7 +94,7 @@ void GameBoard::DrawScore(CDC &dc) {
 	CString str;
 	str.Format(L"Score: %d", this->score);
 	dc.SetTextColor(RGB(205, 193, 180));
-	dc.TextOutW(pos_start.x, 0, str);
+	dc.TextOutW(55, 0, str);
 }
 void GameBoard::Draw(CDC &dc) {
 	CDC MemDC;
@@ -117,7 +118,7 @@ void GameBoard::Draw(CDC &dc) {
 			bitMap[pos].GetObject(sizeof(BITMAP), &bm);
 
 			// 坐标系不同，交换 i 和 j
-			pDC->BitBlt(pos_start.x + j * 120, pos_start.y + i * 120, bm.bmWidth, bm.bmHeight, &MemDC, 0, 0, SRCCOPY);
+			pDC->BitBlt(55 + j * 120, 55 + i * 120, bm.bmWidth, bm.bmHeight, &MemDC, 0, 0, SRCCOPY);
 		}
 		ReleaseDC(NULL, MemDC);
 }
@@ -129,22 +130,19 @@ bool GameBoard::MoveTo(int d) {
 	{
 		switch (d) {
 		case UP:
-			this->Action2048(0);
+			HandleUp();
 			break;
 		case DOWN:
-			this->Action2048(1);
+			HandleDown();
 			break;
 		case LEFT:
-			this->Action2048(2);
+			HandleLeft();
 			break;
 		case RIGHT:
-			this->Action2048(3);
+			HandleRight();
 			break;
 		}
 		this->SwitchPlayer();
-		if (isWin() || isDead()) isGameRunning = false;
-		//this->generateNewBlock();
-		//this->SwitchPlayer();
 		return true;
 	}
 	return false;
@@ -176,7 +174,7 @@ bool GameBoard::isWin() {
 	}
 	return (max == 2048);
 }
-bool GameBoard::isDead() {
+bool GameBoard::isLose() {
 	if (this->GetEmptyNumber() > 0) 
 		return false;
 	for (int i = 0; i < 4; ++i)
@@ -367,19 +365,31 @@ SimpleMatrix& GameBoard::GetBoard() {
 // 随机生成新的方块，2或4
 void GameBoard::generateNewBlock()
 {
-	if (!isPlayerTurn)
-	{
-		int new_pos = this->getRandomBlankPos();
-		if (new_pos == -1) return;
-		int row = new_pos / 10;
-		int col = new_pos % 10;
-		this->board->element[row][col] = Rand(1, 100) > 90 ? 4 : 2;	//按概率决定生成2或4
-		this->SwitchPlayer();
+	GetEmpty();
+	if (empty_grids.size() == 0) {
+		if (isLose()) {
+			isPlayerLose = true;
+			isGameRunning = false;
+			return;
+		}
 	}
+	int new_pos = this->getRandomEmptyPos();
+	if (new_pos == -1) return;
+	int row = new_pos / 10;
+	int col = new_pos % 10;
+	this->board->element[row][col] = Rand(1, 100) > 90 ? 4 : 2;	//按概率决定生成2或4
+	this->isPlayerTurn = true;
+	if (empty_grids.size() == 1) {
+		if (isLose()) {
+			isPlayerLose = true;
+			isGameRunning = false;
+		}
+	}
+	
 }
 // 按需求生成新的方块
 void GameBoard::generateNewBlock(int element) {
-	int new_pos = this->getRandomBlankPos();
+	int new_pos = this->getRandomEmptyPos();
 	if (new_pos == -1) return;
 	int row = new_pos / 10;
 	int col = new_pos % 10;
@@ -393,7 +403,7 @@ int GameBoard::MaxValue() {
 
 // private
 // 随机生成即将要填充的空位
-int GameBoard::getRandomBlankPos() {
+int GameBoard::getRandomEmptyPos() {
 	vector<int> blankBlock;
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -403,7 +413,7 @@ int GameBoard::getRandomBlankPos() {
 	int randomIdx = Rand(0, blankBlock.size());
 	return blankBlock[randomIdx];//随机新位置
 }
-// 元素移动&融合
+// 元素移动&融合 弃用
 void GameBoard::Action2048(int direction)
 {
 	switch (direction) {
@@ -456,3 +466,127 @@ int GameBoard::GetEmptyNumber()
 {
 	return this->board->getElementCount(0);
 }
+
+// 压缩
+int* GameBoard::compress(int *t)
+{
+	int container[4] = { 0,0,0,0 };
+	int turn = 0;
+	for (int i = 0; i<4; i++) {
+		if (t[i] != 0) {
+			container[turn] = t[i];
+			turn++;
+		}
+	}
+	for (int i = 0; i<4; i++) {
+		t[i] = container[i];
+	}
+	return t;
+}
+
+
+int* GameBoard::Combine(int *temp) {
+	compress(temp);
+	for (int i = 0; i<4; i++) {
+		if (temp[i] != 0 && temp[i] == temp[i + 1]) {
+			temp[i] = 2 * temp[i];
+			score += temp[i];
+			temp[i + 1] = 0;
+		}
+		if (temp[i] >= 2048) {
+			isPlayerWin = true;
+		}
+	}
+	compress(temp);
+	return temp;
+}
+
+void GameBoard::HandleUp() {
+	int temp[4] = { 0,0,0,0 };
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			temp[j] = board->element[j][i];
+		}
+		Combine(temp);
+		for (int j = 0; j<4; j++) {
+			board->element[j][i] = temp[j];
+		}
+	}
+}
+
+void GameBoard::HandleDown() {
+	int temp[4] = { 0,0,0,0 };
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			temp[j] = board->element[3 - j][i];
+		}
+		Combine(temp);
+		for (int j = 0; j<4; j++) {
+			board->element[3 - j][i] = temp[j];
+		}
+	}
+}
+
+void GameBoard::HandleLeft() {
+	int temp[4] = { 0,0,0,0 };
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			temp[j] = board->element[i][j];
+		}
+		Combine(temp);
+		for (int j = 0; j<4; j++) {
+			board->element[i][j] = temp[j];
+		}
+	}
+}
+
+void GameBoard::HandleRight() {
+	int temp[4] = { 0,0,0,0 };
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			temp[j] = board->element[i][3 - j];
+		}
+		Combine(temp);
+		for (int j = 0; j<4; j++) {
+			board->element[i][3 - j] = temp[j];
+		}
+	}
+}
+
+void GameBoard::AddNumber() {
+	GetEmpty();
+	if (empty_grids.size() == 0) {
+		if (isLose()) {
+			isPlayerLose = true;
+			return;
+		}
+	}
+	int new_pos = this->getRandomEmptyPos();
+	if (new_pos == -1) return;
+	int row = new_pos / 10;
+	int col = new_pos % 10;
+	this->board->element[row][col] = Rand(1, 100) > 90 ? 4 : 2;
+	//number[lastRow][lastLine] = (GetRandom(10) == 9) ? 4 : 2;
+
+	isPlayerTurn = true;
+	if (empty_grids.size() == 1) {
+		if (isLose()) {
+			isPlayerLose = true;
+		}
+	}
+}
+
+void GameBoard::GetEmpty() {
+	empty_grids.clear();
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			if (this->board->get(i, j) == 0) {
+				empty_grids.push_back(i * 10 + j);
+			}
+		}
+	}
+}
+
+
+
+

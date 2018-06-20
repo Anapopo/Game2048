@@ -65,7 +65,7 @@
     <ClCompile Include="GameAI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="GameRule.cpp">
+    <ClCompile Include="GameBoard.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

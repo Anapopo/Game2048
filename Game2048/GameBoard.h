@@ -12,50 +12,52 @@ public:
 	int score;
 	bool isGameRunning;
 	bool isPlayerTurn;
+	bool isPlayerWin;
+	bool isPlayerLose;
 	list<int> empty_grids;
+	int empty_count;
 	enum Direction { UP=1, DOWN=2, LEFT=3, RIGHT=4 };
 
 private:
-	int offset_width;
-	CPoint pos_start;
+	// int offset_width;
+	//CPoint pos_start;
 	SimpleMatrix * board;
-	//SimpleMatrix * last_board;
 	CBitmap bitMap[12];
 
 public:
 	GameBoard();
-	// 复制构造
 	GameBoard(GameBoard &rule);
 	~GameBoard();
-	//GameRule& operator=(GameRule& rule);
 	// 开始游戏
 	void GameStart();
 	// 填充盘面
 	void fillBoardWith(int element);
 	// 结束游戏
 	void GameOver();
-	// 交换行动
+	// 交换回合
 	void SwitchPlayer();
 	// 重启游戏
 	void GameRestart();
 	// 判断游戏是否胜利
 	bool isWin();
 	// 判断游戏是否结束
-	bool isDead();
+	bool isLose();
 	// 获取所有空格的链表
 	list<int>& getEmptyGrids();
+
+	void GetEmpty();
 	// 评估插入2或4
 	int EvaluateInsert(int position, int value);
 	// 插入值
 	void InsertTile(int position, int value);
 	// 获取Board
 	SimpleMatrix& GetBoard();
-	// 获取上一个Board
-	//SimpleMatrix GetLastBoard();
 	// 随机生成新的方块，2或4
 	void generateNewBlock();
 	//  按需求生成新的方块
 	void generateNewBlock(int element);
+
+	void AddNumber();
 	// 公有移动元素方法
 	bool MoveTo(int d);
 	void LoadBitMap();
@@ -71,15 +73,25 @@ public:
 	// 获取当前空位数目
 	int GetEmptyNumber();
 	
+	int* Combine(int *temp);
+	void HandleUp();
+	void HandleDown();
+	void HandleLeft();
+	void HandleRight();
 private:
 	// 生成随机数
 	inline double Rand(double L, double R);
 	// log2底N
 	inline int log2(int n);
 	// 随机返回一个空位
-	int getRandomBlankPos();
+	int getRandomEmptyPos();
 	// 元素移动&融合
 	void Action2048(int direction);
+
+	/* https://gitlab.com/Anapopo/game2048withAI/blob/master/grid.cpp */
+	/*search input array and compress them in fornt several dimension*/
+	int* compress(int *t);
+
 };
 #endif
 

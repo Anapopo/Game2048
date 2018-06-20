@@ -194,7 +194,7 @@
     <ClCompile Include="FontFactory.cpp" />
     <ClCompile Include="Game2048.cpp" />
     <ClCompile Include="GameAI.cpp" />
-    <ClCompile Include="GameRule.cpp" />
+    <ClCompile Include="GameBoard.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="SimpleMatrix.cpp" />
     <ClCompile Include="stdafx.cpp">

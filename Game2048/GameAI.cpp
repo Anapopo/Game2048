@@ -116,7 +116,7 @@ pair<int, double> GameAI::GetBest(int depth, double alpha, double beta)
 			result = newAi2.GetBest(depth, alpha, score);
 			if (result.second < score) {
 				score = result.second;
-				//move = result.first;
+				// move = result.first;
 			}
 			if (result.second < alpha) {
 				return make_pair(5, alpha);
