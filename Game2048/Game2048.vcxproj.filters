@@ -36,6 +36,12 @@
     <ClInclude Include="FontFactory.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="GameRule.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameAI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game2048.cpp">
@@ -57,6 +63,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="GameRule.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameAI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

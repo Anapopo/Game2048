@@ -13,6 +13,39 @@ public:
 	SimpleMatrix(int row, int fill) {
 		this->init(row, fill);
 	}
+	//void Copy(SimpleMatrix &mat)
+	//{
+	//	for (int i = 0; i < 4; i++)
+	//		for (int j = 0; j < 4; j++)
+	//			this->element[i][j] = mat.get(i, j);
+	//}
+	//SimpleMatrix& operator=(SimpleMatrix& mat) {
+	//	if (&mat != this)
+	//	{
+	//		//this->~SimpleMatrix();
+	//		this->init(4, 0);
+	//		for(int i=0;i<4;i++)
+	//			for (int j=0;j<4;j++)
+	//				this->element[i][j] = mat.get(i, j);
+	//	}
+	//	return *this;
+	//}
+	SimpleMatrix(SimpleMatrix &mat)
+	{
+		this->init(4, 0);
+		for (int i=0; i<4; i++)
+			for (int j=0; j<4; j++)
+				this->element[i][j] = mat.get(i, j);
+	}
+	~SimpleMatrix() {
+		if (this->element != NULL)
+		{
+			for (int i = 0; i < 4; i++)
+				delete[] this->element[i];
+			delete [] this->element;
+		}
+
+	}
 
 	SimpleMatrix(int row, int values[]) {
 		this->init(row);
@@ -35,8 +68,8 @@ public:
 		throw out_of_range("can not find the specify i and j!");
 	}
 	// 逆时针旋转矩阵90度  
-	void rotate1()  
-	{  
+	void rotate1()
+	{
 		SimpleMatrix temp(4, 0); 
 		for(int i=0;i<this->rows;i++)  
 			for(int j=0;j<this->columns;j++)
@@ -80,6 +113,18 @@ public:
 				if (this->element[i][j] == element)
 					count++;
 		return count;
+	}
+	// 获取最大元素
+	int getMaxValue() {
+		int temp = 0;
+		for (int i = 0; i<4; i++) {
+			for (int j = 0; j<4; j++) {
+				if (this->element[i][j] > temp) {
+					temp = this->element[i][j];
+				}
+			}
+		}
+		return temp;
 	}
 
 	//重载<<符号
