@@ -9,15 +9,17 @@ using namespace std;
 
 class GameBoard {
 public:
+	enum Direction { UP=1, DOWN=2, LEFT=3, RIGHT=4, UNKNOW=5 };
+public:
 	int score;
 	bool isGameRunning;
 	bool isPlayerTurn;
 	bool isPlayerWin;
 	bool isPlayerLose;
+	Direction lastMove;
 	list<int> empty_grids;
 	int empty_count;
-	enum Direction { UP=1, DOWN=2, LEFT=3, RIGHT=4 };
-
+	
 private:
 	// int offset_width;
 	//CPoint pos_start;
@@ -63,6 +65,7 @@ public:
 	void LoadBitMap();
 	// 绘制分数
 	void DrawScore(CDC &dc);
+	void DrawDirection(CDC &dc);
 	void Draw(CDC &dc);
 	// 评估当前平滑性
 	int Smoothness();

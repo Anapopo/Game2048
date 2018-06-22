@@ -3,7 +3,6 @@
 #include <utility>
 #include <time.h>
 #include "GameBoard.h"
-
 using namespace std;
 
 // 构造、析构、重载
@@ -11,10 +10,8 @@ GameBoard::GameBoard() {
 	this->score = 0;
 	this->isGameRunning = false;
 	this->isPlayerTurn = false;
-	//this->offset_width = 20;
 	board = new SimpleMatrix(4, 0);
-	//last_board = new SimpleMatrix(4, 0);
-	//pos_start.SetPoint(55, 55);
+	lastMove = UNKNOW;
 	this->LoadBitMap();
 }
 GameBoard::GameBoard(GameBoard &rule)
@@ -22,38 +19,17 @@ GameBoard::GameBoard(GameBoard &rule)
 	this->score = rule.score;
 	this->isGameRunning = rule.isGameRunning;
 	this->isPlayerTurn = rule.isPlayerTurn;
-	//this->offset_width = 10;
-	//pos_start.SetPoint(55, 55);
 	this->LoadBitMap();
-
 	SimpleMatrix temp(rule.GetBoard());
 	this->board = new SimpleMatrix(4, 0);
-
 	for (int i=0;i<4;i++)
 		for (int j=0;j<4;j++)
 			this->board->set(i, j, temp.get(i, j));
-	//this->board->Copy(temp);
 }
 GameBoard::~GameBoard() {
 	if (this->board != NULL)
 		delete this->board;
-	//delete this->last_board;
 }
-//GameRule& GameRule::operator=(GameRule& rule)
-//{
-//	if (&rule != this) {
-//		delete this->board;
-//		this->board = new SimpleMatrix(4, 0);
-//
-//		SimpleMatrix temp = rule.GetBoard();
-//		//SimpleMatrix tempBefore = rule.GetLastBoard();
-//		if (!rule.isPlayerTurn) rule.SwitchPlayer();
-//
-//		this->board = &temp;
-//		//this->last_board = &tempBefore;
-//	}
-//	return *this;
-//}
 
 // 开始、重启、结束游戏
 void GameBoard::GameStart()
@@ -92,9 +68,25 @@ void GameBoard::DrawScore(CDC &dc) {
 	f1.CreateFontIndirectW(FontFactory::CreateFontW(32, L"微软雅黑"));
 	dc.SelectObject(&f1);
 	CString str;
-	str.Format(L"Score: %d", this->score);
+	str.Format(L"分数: %d", this->score);
 	dc.SetTextColor(RGB(205, 193, 180));
+	//dc.SetTextColor(RGB(255, 0, 0));
 	dc.TextOutW(55, 0, str);
+}
+void GameBoard::DrawDirection(CDC &dc) {
+	CFont f1;
+	f1.CreateFontIndirectW(FontFactory::CreateFontW(32, L"微软雅黑"));
+	dc.SelectObject(&f1);
+	CString str, lastString;
+	switch(lastMove){
+	case UP: lastString = "↑";break;
+	case DOWN: lastString = "↓";break;
+	case LEFT: lastString = "←";break;
+	case RIGHT: lastString = "→";break;
+	}
+	str.Format(L"方向: %s", lastString);
+	dc.SetTextColor(RGB(205, 193, 180));
+	dc.TextOutW(60*4+40, 0, str);//↑↓←→
 }
 void GameBoard::Draw(CDC &dc) {
 	CDC MemDC;
@@ -104,6 +96,7 @@ void GameBoard::Draw(CDC &dc) {
 	MemDC.CreateCompatibleDC(pDC);
 
 	this->DrawScore(dc);
+	this->DrawDirection(dc);
 
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -131,15 +124,19 @@ bool GameBoard::MoveTo(int d) {
 		switch (d) {
 		case UP:
 			HandleUp();
+			lastMove = UP;
 			break;
 		case DOWN:
 			HandleDown();
+			lastMove = DOWN;
 			break;
 		case LEFT:
 			HandleLeft();
+			lastMove = LEFT;
 			break;
 		case RIGHT:
 			HandleRight();
+			lastMove = RIGHT;
 			break;
 		}
 		this->SwitchPlayer();
@@ -177,10 +174,6 @@ bool GameBoard::isWin() {
 bool GameBoard::isLose() {
 	if (this->GetEmptyNumber() > 0) 
 		return false;
-	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < 4; ++j)
-			if (board->element[i][j] == 0)
-				return false;
 	for (int i = 0; i < 3; ++i)
 		for (int j = 0; j < 4; ++j)
 			if (board->element[i][j] == board->element[i + 1][j])
@@ -205,6 +198,7 @@ int GameBoard::EvaluateInsert(int position, int value)
 	//up
 	for(int i=x ; i>0 ; i--){
 		if(this->board->get(i, y) != 0){
+			// 取最小值，即minimax算法中MIN节点,要取对我方最不利的格局，即beta上界
 			if(abs( (this->board->get(i, y) - value)) < temp ){
 				temp = abs((this->board->get(i, y) - value));
 			}
@@ -343,7 +337,17 @@ int GameBoard::Monotonicity() {
 	return monotonicity;
 }
 
-
+// 获取存在的空格到链表中
+void GameBoard::GetEmpty() {
+	empty_grids.clear();
+	for (int i = 0; i<4; i++) {
+		for (int j = 0; j<4; j++) {
+			if (this->board->get(i, j) == 0) {
+				empty_grids.push_back(i * 10 + j);
+			}
+		}
+	}
+}
 // 获取所有空格的链表
 list<int>& GameBoard::getEmptyGrids()
 {
@@ -354,15 +358,10 @@ list<int>& GameBoard::getEmptyGrids()
 				this->empty_grids.push_back(i*10+j);
 	return this->empty_grids;
 }
+
 // 获取Board
-SimpleMatrix& GameBoard::GetBoard() {
-	return *this->board;
-}
-// 获取上一步的Board
-//SimpleMatrix GameRule::GetLastBoard() {
-//	return *this->last_board;
-//}
-// 随机生成新的方块，2或4
+SimpleMatrix& GameBoard::GetBoard() { return *this->board; }
+// 随机生成新的方块，2或4（内有判断胜负逻辑）
 void GameBoard::generateNewBlock()
 {
 	GetEmpty();
@@ -387,7 +386,7 @@ void GameBoard::generateNewBlock()
 	}
 	
 }
-// 按需求生成新的方块
+// 按需求生成新的方块(保留特性)
 void GameBoard::generateNewBlock(int element) {
 	int new_pos = this->getRandomEmptyPos();
 	if (new_pos == -1) return;
@@ -401,7 +400,6 @@ int GameBoard::MaxValue() {
 	return this->board->getMaxValue();
 }
 
-// private
 // 随机生成即将要填充的空位
 int GameBoard::getRandomEmptyPos() {
 	vector<int> blankBlock;
@@ -410,64 +408,14 @@ int GameBoard::getRandomEmptyPos() {
 			if (board->element[i][j] == 0)
 				blankBlock.push_back(i * 10 + j);
 	if (blankBlock.empty()) return -1;
+	srand(time(NULL));
 	int randomIdx = Rand(0, blankBlock.size());
 	return blankBlock[randomIdx];//随机新位置
 }
-// 元素移动&融合 弃用
-void GameBoard::Action2048(int direction)
-{
-	switch (direction) {
-		// 上
-	case 0:
-		board->rotate3();
-		this->Action2048(1);
-		board->rotate3();
-		break;
-		// 左 逆时针 + 顺时针
-	case 2:
-		board->rotate1();
-		this->Action2048(1);
-		board->rotate2();
-		break;
-		// 右
-	case 3:
-		board->rotate2();
-		this->Action2048(1);
-		board->rotate1();
-		break;
-		// 下
-	case 1:
-		int i, j, k;
-		for (k = 0; k < 3; ++k)
-		{
-			//int merge_times = 2;
-			for (i = 0; i<4; ++i)
-				for (j = 3; j>0; --j)
-				{
-					if (board->element[j][i] == 0)
-					{
-						int temp = board->element[j][i];
-						board->element[j][i] = board->element[j - 1][i];
-						board->element[j - 1][i] = temp;
-					}
-					if (board->element[j][i] == board->element[j - 1][i])
-					{
-						board->element[j][i] *= 2;
-						this->score += board->element[j][i];
-						board->element[j - 1][i] = 0;
-					}
-				}
-		}
-		break;
-	}
-}
 // 获取当前空位数目
-int GameBoard::GetEmptyNumber()
-{
-	return this->board->getElementCount(0);
-}
+int GameBoard::GetEmptyNumber() { return this->board->getElementCount(0); }
 
-// 压缩
+// 压缩 去除数字间的零
 int* GameBoard::compress(int *t)
 {
 	int container[4] = { 0,0,0,0 };
@@ -484,7 +432,7 @@ int* GameBoard::compress(int *t)
 	return t;
 }
 
-
+// 联合 数字合并后再次压缩
 int* GameBoard::Combine(int *temp) {
 	compress(temp);
 	for (int i = 0; i<4; i++) {
@@ -501,6 +449,7 @@ int* GameBoard::Combine(int *temp) {
 	return temp;
 }
 
+// 处理各个方向的移动
 void GameBoard::HandleUp() {
 	int temp[4] = { 0,0,0,0 };
 	for (int i = 0; i<4; i++) {
@@ -508,12 +457,12 @@ void GameBoard::HandleUp() {
 			temp[j] = board->element[j][i];
 		}
 		Combine(temp);
+		// 联合后放回 Board
 		for (int j = 0; j<4; j++) {
 			board->element[j][i] = temp[j];
 		}
 	}
 }
-
 void GameBoard::HandleDown() {
 	int temp[4] = { 0,0,0,0 };
 	for (int i = 0; i<4; i++) {
@@ -526,7 +475,6 @@ void GameBoard::HandleDown() {
 		}
 	}
 }
-
 void GameBoard::HandleLeft() {
 	int temp[4] = { 0,0,0,0 };
 	for (int i = 0; i<4; i++) {
@@ -539,7 +487,6 @@ void GameBoard::HandleLeft() {
 		}
 	}
 }
-
 void GameBoard::HandleRight() {
 	int temp[4] = { 0,0,0,0 };
 	for (int i = 0; i<4; i++) {
@@ -553,6 +500,9 @@ void GameBoard::HandleRight() {
 	}
 }
 
+
+// 弃用
+/*
 void GameBoard::AddNumber() {
 	GetEmpty();
 	if (empty_grids.size() == 0) {
@@ -575,18 +525,56 @@ void GameBoard::AddNumber() {
 		}
 	}
 }
-
-void GameBoard::GetEmpty() {
-	empty_grids.clear();
-	for (int i = 0; i<4; i++) {
-		for (int j = 0; j<4; j++) {
-			if (this->board->get(i, j) == 0) {
-				empty_grids.push_back(i * 10 + j);
-			}
-		}
-	}
-}
+*/
 
 
 
 
+// 元素移动&融合 弃用
+//void GameBoard::Action2048(int direction)
+//{
+//	switch (direction) {
+//		// 上
+//	case 0:
+//		board->rotate3();
+//		this->Action2048(1);
+//		board->rotate3();
+//		break;
+//		// 左 逆时针 + 顺时针
+//	case 2:
+//		board->rotate1();
+//		this->Action2048(1);
+//		board->rotate2();
+//		break;
+//		// 右
+//	case 3:
+//		board->rotate2();
+//		this->Action2048(1);
+//		board->rotate1();
+//		break;
+//		// 下
+//	case 1:
+//		int i, j, k;
+//		for (k = 0; k < 3; ++k)
+//		{
+//			//int merge_times = 2;
+//			for (i = 0; i<4; ++i)
+//				for (j = 3; j>0; --j)
+//				{
+//					if (board->element[j][i] == 0)
+//					{
+//						int temp = board->element[j][i];
+//						board->element[j][i] = board->element[j - 1][i];
+//						board->element[j - 1][i] = temp;
+//					}
+//					if (board->element[j][i] == board->element[j - 1][i])
+//					{
+//						board->element[j][i] *= 2;
+//						this->score += board->element[j][i];
+//						board->element[j - 1][i] = 0;
+//					}
+//				}
+//		}
+//		break;
+//	}
+//}
